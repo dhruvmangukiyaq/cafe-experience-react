@@ -1,171 +1,133 @@
 # Cafe Experience Tracker
 
-A full-stack **MERN** CRUD app to track real-life cafe experiences —
-place, food, environment, wifi, price, ambience tags, rating and notes.
+A full-stack MERN app to track cafe visits — ratings, work-friendliness, food, environment, pricing and ambience — with a clean table dashboard and modal-based CRUD.
 
-- **Frontend:** React 18 + Vite + React Router
-- **Backend:** Node.js + Express + Mongoose
-- **Database:** MongoDB Atlas (you configure it yourself via `.env`)
-
----
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
+![Mongoose](https://img.shields.io/badge/Mongoose-8-880000?logo=mongoose&logoColor=white)
 
 ## Features
 
-- **Listing page (`/`)** — opens first; shows all cafes as cards + **+ Add Cafe** button
-- **Add page (`/add`)** — empty form, **Save** → back to listing
-- **Edit page (`/edit/:id`)** — form pre-filled with that cafe, **Save changes** → back to listing
-- **Delete** — soft delete (`isDeleted: true`), with confirm; refreshes the list
-- Fields per cafe: name, city, area, food specialties, environment
-  (noise level / seating type / AC / outdoor seating), avg price per person,
-  wifi quality, power plugs, ambience tags, **rating (-10 to 10 dropdown)**,
-  notes
-- Backend validates input and always responds `{ success, data }` or
-  `{ success: false, message, errors? }`
+- **Dashboard** — cafe table with specialties, environment summary, price (₹), WiFi stars, rating pill, tags, and Edit / Delete actions
+- **Stats header** — total cafes tracked + average rating, computed live from data
+- **Add / Edit modal** — single form with validation (`name` + `city` required), environment section (noise, seating, WiFi speed, AC, outdoor), WiFi quality (1–5), rating (0–5), tags and notes
+- **Soft delete** — `DELETE` sets `isDeleted: true`; deleted cafes never appear in listings
+- **Filtering API** — list supports `?city=`, `?tag=`, `?minRating=`
+- **Consistent API contract** — success is always `{ success: true, data }`, errors are `{ success: false, message, errors? }`
 
----
+## Tech Stack
 
-## Folder structure
+| Layer    | Tech                                            |
+| -------- | ----------------------------------------------- |
+| Frontend | React 18, React Router 7, Vite 5                |
+| Backend  | Node.js, Express 4, Mongoose 8                  |
+| Database | MongoDB Atlas                                   |
+| Dev      | Vite proxy (`/api` → `localhost:5001`), dotenv  |
+
+## Project Structure
 
 ```
-cafe-react/
-├── README.md
 ├── backend/
-│   ├── server.js                 # Express app + MongoDB connect + listen
-│   ├── .env                      # YOU create this (MONGODB_URI, PORT) — never commit real values
-│   ├── .env.example              # Placeholder example
-│   ├── config/db.js              # mongoose.connect(process.env.MONGODB_URI) only
-│   ├── models/Cafe.js            # Mongoose "Cafe" schema (timestamps: true)
-│   ├── controllers/cafeController.js  # CRUD logic (async/await)
-│   ├── routes/cafeRoutes.js      # Routes under /api/cafes
-│   ├── middleware/asyncHandler.js
-│   └── middleware/errorHandler.js
-└── frontend/  (Vite + React)
-    ├── vite.config.js            # port 5174 + /api proxy → http://localhost:5001
+│   ├── server.js                 # Express app, health check, error handling
+│   ├── config/db.js              # mongoose.connect(MONGODB_URI)
+│   ├── models/Cafe.js            # Cafe schema (timestamps, soft delete)
+│   ├── controllers/cafeController.js  # CRUD + query filters
+│   ├── routes/cafeRoutes.js      # /api/cafes routes
+│   └── middleware/               # asyncHandler, errorHandler
+└── frontend/
+    ├── vite.config.js            # port 5174 + /api proxy → :5001
     └── src/
-        ├── main.jsx              # BrowserRouter setup
-        ├── App.jsx               # Title + Routes (/, /add, /edit/:id)
-        ├── api.js                # fetch helpers (same-origin /api; VITE_API_URL override)
-        ├── index.css
-        ├── pages/
-        │   ├── CafesPage.jsx     # listing
-        │   ├── AddCafePage.jsx   # create form page
-        │   └── EditCafePage.jsx  # edit form page
+        ├── App.jsx               # Routes: /, /add, /edit/:id
+        ├── api.js                # fetch helpers (VITE_API_URL override)
+        ├── pages/CafesPage.jsx   # dashboard + stats + modal state
+        ├── pages/AddCafePage.jsx # centered form (direct URL)
+        ├── pages/EditCafePage.jsx# centered form (direct URL)
         └── components/
-            ├── CafeForm.jsx      # shared add/edit form
-            └── CafeList.jsx      # cards + Edit/Delete buttons
+            ├── CafeList.jsx      # table view
+            └── CafeForm.jsx      # shared add/edit form
 ```
 
----
+## Getting Started
 
-## Prerequisites
+### Prerequisites
 
-- Node.js 18+ and npm
-- A MongoDB Atlas cluster (create it yourself in the Atlas dashboard)
+- Node.js 18+
+- A MongoDB Atlas cluster + connection string
 
----
-
-## Setup
-
-### 1) Backend
+### 1. Backend
 
 ```bash
 npm install --prefix backend
 ```
 
-Create `backend/.env` yourself (no real URI lives in this repo):
+Create `backend/.env`:
 
 ```
 MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/<database>?retryWrites=true&w=majority
 PORT=5001
 ```
 
-> **Why 5001, not 5000?** On macOS, port 5000 is occupied by Control
-> Center (AirPlay), so Express cannot bind to it (`EADDRINUSE`).
-
-Run it:
+Run:
 
 ```bash
-# from cafe-react/backend
-node server.js
-# health check -> http://localhost:5001/
+node backend/server.js
+# health check → http://localhost:5001/
 # {"success":true,"message":"Cafe Experience Tracker API is running"}
 ```
 
-### 2) Frontend
+> Port 5001 is used because macOS Control Center (AirPlay) occupies port 5000.
+
+### 2. Frontend
 
 ```bash
 npm install --prefix frontend
-```
-
-Run it:
-
-```bash
-# from cafe-react/frontend
-npm run dev
+npm run dev --prefix frontend
 # open http://localhost:5174/
 ```
 
-> **Why 5174, not 5173?** Port 5173 was already used by another project on
-> this machine, so Vite is pinned to 5174 (`strictPort: true`).
+> Port 5174 is pinned in `vite.config.js` (`strictPort: true`). In dev, `/api/*` is proxied to `http://localhost:5001`, so the browser talks same-origin. To point at another backend, set `frontend/.env`: `VITE_API_URL=http://localhost:5001`.
 
-Build for production:
+Build:
 
 ```bash
 npm run build --prefix frontend   # outputs frontend/dist/
 ```
 
----
-
-## Backend API
+## API Reference
 
 Base URL (dev): `http://localhost:5001`
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/cafes` | Create a cafe (`name`, `city` required) → `{ success: true, data: createdCafe }` |
-| GET | `/api/cafes` | List all cafes (`isDeleted: false`); filters: `?city=…&tag=…&minRating=…` |
-| GET | `/api/cafes/:id` | Single cafe (`isDeleted: false`) |
-| PUT | `/api/cafes/:id` | Update any cafe fields → updated doc |
-| DELETE | `/api/cafes/:id` | Soft delete (`isDeleted = true`) → `{ success: true, data: null }` |
+| Method | Endpoint         | Description                                              |
+| ------ | ---------------- | -------------------------------------------------------- |
+| POST   | `/api/cafes`     | Create a cafe (`name`, `city` required)                  |
+| GET    | `/api/cafes`     | List cafes (`isDeleted: false`); `?city=&tag=&minRating=` |
+| GET    | `/api/cafes/:id` | Get one cafe                                             |
+| PUT    | `/api/cafes/:id` | Update a cafe                                            |
+| DELETE | `/api/cafes/:id` | Soft delete (`isDeleted = true`)                         |
 
 Example:
 
 ```bash
 curl -X POST http://localhost:5001/api/cafes \
   -H "Content-Type: application/json" \
-  -d '{"name":"Blue Tokai","city":"Ahmedabad","rating":8}'
+  -d '{"name":"Blue Tokai","city":"Ahmedabad","rating":4.5}'
 ```
 
-### Data model (Mongoose `Cafe`)
+## Data Model (`Cafe`)
 
-- `name` (String, required), `city` (String, required), `area` (String)
+- `name` (required), `city` (required), `area`
 - `foodSpecialties` ([String])
-- `environment`: `noiseLevel` (quiet/normal/loud), `seatingType`
-  (sofa/chairs/mixed), `hasAC` (Boolean), `hasOutdoorSeating` (Boolean)
-- `avgPricePerPerson` (Number), `wifiQuality` (1–5, default 3),
-  `powerPlugsAvailable` (Boolean)
-- `ambienceTags` ([String]), `rating` (**-10 to 10**, default 0), `notes`
-- `isDeleted` (Boolean, default false), plus `createdAt`/`updatedAt`
-
----
-
-## Frontend notes
-
-- Dev only: Vite proxies `/api/*` to `http://localhost:5001`, so the
-  browser talks same-origin (no CORS / wrong-port issues).
-  To call a backend elsewhere, set `VITE_API_URL` in `frontend/.env`:
-  `VITE_API_URL=http://localhost:5001` (`src/api.js` reads it).
-- Form details: comma-separated inputs are split into arrays on submit;
-  `name` + `city` required; empty wifi falls back to backend default (3).
-- Rating is a dropdown from **-10 to 10** (backend enforces the same range).
-
----
+- `environment`: `noiseLevel` (quiet/normal/loud), `seatingType` (sofa/chairs/mixed), `wifiSpeed` (slow/medium/fast), `hasAC`, `hasOutdoorSeating`
+- `avgPricePerPerson` (Number, ₹), `wifiQuality` (1–5, default 3), `powerPlugsAvailable`
+- `ambienceTags` ([String]), `rating` (0–5 in UI; backend allows −10 to 10), `notes`
+- `isDeleted` (default false), `createdAt` / `updatedAt`
 
 ## Troubleshooting
 
-| Symptom | Fix |
-|---------|-----|
-| `EADDRINUSE :::5000` | Use `PORT=5001` (macOS AirPlay owns 5000) |
-| `NetworkError when attempting to fetch resource` | Open `http://localhost:5174` (not 5173) and hard-refresh (`Cmd+Shift+R`) so the latest bundle loads |
-| `MONGODB_URI is not defined` | Create `backend/.env` with your Atlas URI |
-| Old form values stuck after delete/edit | Hard-refresh; the app exits edit mode on delete automatically |
+| Symptom                                        | Fix                                                              |
+| ---------------------------------------------- | ---------------------------------------------------------------- |
+| `EADDRINUSE :::5000`                            | Use `PORT=5001` (macOS AirPlay owns 5000)                        |
+| `NetworkError when attempting to fetch resource`| Open `http://localhost:5174` (not 5173) and hard-refresh         |
+| `MONGODB_URI is not defined`                    | Create `backend/.env` with your Atlas URI                        |

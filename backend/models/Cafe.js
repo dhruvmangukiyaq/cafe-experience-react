@@ -37,6 +37,11 @@ const cafeSchema = new mongoose.Schema(
         enum: ['sofa', 'chairs', 'mixed'],
         default: 'mixed',
       },
+      wifiSpeed: {
+        type: String,
+        enum: ['slow', 'medium', 'fast'],
+        default: 'medium',
+      },
       hasAC: { type: Boolean, default: true },
       hasOutdoorSeating: { type: Boolean, default: false },
     },

@@ -3,16 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getCafe, updateCafe } from '../api';
 import CafeForm from '../components/CafeForm';
 
-// Page 3 — Edit: loads one cafe by id and shows the form (route: /edit/:id).
-// After saving, goes back to the listing page (/).
 export default function EditCafePage() {
-  const { id } = useParams(); // id from the URL, e.g. /edit/abc123
+  const { id } = useParams();
   const navigate = useNavigate();
   const [cafe, setCafe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [banner, setBanner] = useState('');
 
-  // Load the cafe to edit when the page opens
   useEffect(() => {
     getCafe(id)
       .then((data) => setCafe(data))
@@ -23,7 +20,7 @@ export default function EditCafePage() {
   const handleSubmit = async (formData) => {
     try {
       await updateCafe(id, formData);
-      navigate('/'); // back to listing — the updated cafe shows there
+      navigate('/');
     } catch (err) {
       setBanner(`Save failed: ${err.message}`);
     }
@@ -48,8 +45,18 @@ export default function EditCafePage() {
       <Link to="/" className="back-link">
         ← Back to list
       </Link>
-      {/* key={...} resets the form with this cafe's data */}
-      <CafeForm key={cafe._id} initialValues={cafe} onSubmit={handleSubmit} onCancel={() => navigate('/')} />
+      <div className="page-center">
+        <div className="modal" style={{ boxShadow: '0 2px 10px rgba(0,0,0,.08)' }}>
+          <CafeForm
+            key={cafe._id}
+            initialValues={cafe}
+            onSubmit={handleSubmit}
+            onCancel={() => navigate('/')}
+            title="Edit Cafe"
+            submitLabel="Save changes"
+          />
+        </div>
+      </div>
     </>
   );
 }

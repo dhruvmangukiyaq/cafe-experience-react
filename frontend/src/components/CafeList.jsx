@@ -1,63 +1,102 @@
-// Pure presentational list: renders cafe cards + Edit/Delete buttons.
-// Data fetching lives in App.jsx; this component just displays `cafes`.
+// Table view matching the screenshot: NAME / CITY-AREA / SPECIALTIES /
+// ENVIRONMENT / PRICE / WIFI / RATING / TAGS / ACTIONS.
+function wifiStars(n) {
+  const v = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+  return '★'.repeat(v) + '☆'.repeat(5 - v);
+}
+
+function ratingStars(r) {
+  const v = Math.max(0, Math.min(5, Math.round(Number(r) || 0)));
+  return '★'.repeat(v) + '☆'.repeat(5 - v);
+}
+
+function wifiSpeedLabel(cafe) {
+  // New field environment.wifiSpeed, fallback: derive from wifiQuality
+  const s = cafe.environment?.wifiSpeed;
+  if (s) return s;
+  const q = Number(cafe.wifiQuality) || 3;
+  if (q >= 4) return 'fast';
+  if (q <= 2) return 'slow';
+  return 'medium';
+}
+
 export default function CafeList({ cafes, loading, onEdit, onDelete }) {
-  if (loading) return <p>Loading cafes…</p>;
-  if (!cafes.length) return <p>No cafes found. Try adding one above!</p>;
+  if (loading) return <div className="table-card"><p className="muted">Loading cafes…</p></div>;
+  if (!cafes.length)
+    return <div className="table-card"><p className="empty">No cafes found. Click “+ Add Cafe” to add your first spot!</p></div>;
 
   return (
-    <div className="list">
-      {cafes.map((cafe) => (
-        <article key={cafe._id} className="card cafe-card">
-          <header>
-            <h3>{cafe.name}</h3>
-            <span className="rating">★ {cafe.rating ?? 0}</span>
-          </header>
-          <p className="muted">
-            {cafe.city}
-            {cafe.area ? ` • ${cafe.area}` : ''}
-          </p>
-
-          {!!(cafe.foodSpecialties || []).length && (
-            <p>
-              <strong>Food:</strong> {cafe.foodSpecialties.join(', ')}
-            </p>
-          )}
-
-          {/* One-line environment summary */}
-          <p className="muted">
-            {cafe.environment?.noiseLevel} • {cafe.environment?.seatingType} seating
-            {cafe.environment?.hasAC ? ' • AC' : ''}
-            {cafe.environment?.hasOutdoorSeating ? ' • outdoor' : ''}
-            {cafe.powerPlugsAvailable ? ' • plugs' : ''} • WiFi {cafe.wifiQuality}/5
-          </p>
-
-          {!!(cafe.ambienceTags || []).length && (
-            <div className="tags">
-              {cafe.ambienceTags.map((t) => (
-                <span key={t} className="tag">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {cafe.avgPricePerPerson != null && <p>${cafe.avgPricePerPerson} / person</p>}
-          {cafe.notes && <p className="notes-text">{cafe.notes}</p>}
-
-          <div className="actions">
-            <button onClick={() => onEdit(cafe)}>Edit</button>
-            <button
-              className="danger"
-              onClick={() => {
-                // Confirm before soft-deleting
-                if (window.confirm(`Delete "${cafe.name}"?`)) onDelete(cafe._id);
-              }}
-            >
-              Delete
-            </button>
-          </div>
-        </article>
-      ))}
+    <div className="table-card">
+      <table className="cafe-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>City / Area</th>
+            <th>Specialties</th>
+            <th>Environment</th>
+            <th>Price</th>
+            <th>Wifi</th>
+            <th>Rating</th>
+            <th>Tags</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cafes.map((cafe, i) => {
+            const specs = cafe.foodSpecialties || [];
+            const tags = cafe.ambienceTags || [];
+            const rating = Number(cafe.rating ?? 0);
+            return (
+              <tr key={cafe._id} className={i % 2 === 1 ? '' : i === 2 ? 'alt' : ''}>
+                <td className="cafe-name">{cafe.name}</td>
+                <td>
+                  <span className="city-main">{cafe.city}</span>
+                  {cafe.area && <span className="city-area">{cafe.area}</span>}
+                </td>
+                <td>
+                  {specs.length ? (
+                    specs.map((s) => (
+                      <span key={s} className="pill pill-blue">{s}</span>
+                    ))
+                  ) : (
+                    <span className="dash">-</span>
+                  )}
+                </td>
+                <td className="env-text">
+                  Noise: {cafe.environment?.noiseLevel || 'normal'} • Seating:{' '}
+                  {cafe.environment?.seatingType || 'mixed'}
+                  {cafe.environment?.hasAC ? ' • AC' : ''} • WiFi: {wifiSpeedLabel(cafe)}
+                </td>
+                <td className="price">
+                  {cafe.avgPricePerPerson != null ? `₹${cafe.avgPricePerPerson}` : <span className="dash">-</span>}
+                </td>
+                <td>
+                  <span className="pill pill-green">{wifiStars(cafe.wifiQuality)}</span>
+                </td>
+                <td>
+                  <span className="pill pill-yellow">
+                    {ratingStars(rating)} {rating.toFixed(1)}
+                  </span>
+                </td>
+                <td>{tags.length ? tags.join(', ') : <span className="dash">-</span>}</td>
+                <td>
+                  <div className="row-actions">
+                    <button className="btn-edit" onClick={() => onEdit(cafe)}>Edit</button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => {
+                        if (window.confirm(`Delete "${cafe.name}"?`)) onDelete(cafe._id);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

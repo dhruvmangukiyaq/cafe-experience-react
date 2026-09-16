@@ -1,18 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { getCafes, deleteCafe } from '../api';
+import { getCafes, deleteCafe, createCafe, updateCafe } from '../api';
 import CafeList from '../components/CafeList';
+import CafeForm from '../components/CafeForm';
 
-// Page 1 — Listing: shows all cafes + "Add Cafe" button.
-// This is the first page that opens (route: /).
 export default function CafesPage() {
-  // All cafes shown in the list
   const [cafes, setCafes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [banner, setBanner] = useState(''); // success/error message
-  const navigate = useNavigate();
+  const [banner, setBanner] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
 
-  // Fetch all cafes from GET /api/cafes
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
@@ -25,10 +22,45 @@ export default function CafesPage() {
     }
   }, []);
 
-  // Load once on mount
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const avg =
+    cafes.length > 0
+      ? (cafes.reduce((s, c) => s + (Number(c.rating) || 0), 0) / cafes.length).toFixed(1)
+      : '0.0';
+
+  const openAdd = () => {
+    setEditing(null);
+    setShowModal(true);
+  };
+
+  const openEdit = (cafe) => {
+    setEditing(cafe);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditing(null);
+  };
+
+  const handleSubmit = async (payload) => {
+    try {
+      if (editing) {
+        await updateCafe(editing._id, payload);
+        setBanner('Cafe updated.');
+      } else {
+        await createCafe(payload);
+        setBanner('Cafe added.');
+      }
+      closeModal();
+      refresh();
+    } catch (err) {
+      setBanner(`Save failed: ${err.message}`);
+    }
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -44,21 +76,41 @@ export default function CafesPage() {
     <>
       {banner && <p className="banner">{banner}</p>}
 
-      <div className="page-head">
-        <h2>All Cafes</h2>
-        {/* Button -> opens the Add form on its own page (/add) */}
-        <Link to="/add">
-          <button>+ Add Cafe</button>
-        </Link>
-      </div>
+      <header className="hero">
+        <div>
+          <h1>☕ Cafe Experience</h1>
+          <p>All your cafe visits, ratings and work-friendly spots in one place.</p>
+        </div>
+        <button className="btn-add" onClick={openAdd}>+ Add Cafe</button>
+      </header>
 
-      <CafeList
-        cafes={cafes}
-        loading={loading}
-        // Edit button -> opens the Edit form on its own page (/edit/:id)
-        onEdit={(cafe) => navigate(`/edit/${cafe._id}`)}
-        onDelete={handleDelete}
-      />
+      <section className="stats">
+        <div className="stat-card">
+          <span className="stat-num">{cafes.length}</span>
+          <span className="stat-label">Cafes tracked</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-num">{avg}</span>
+          <span className="stat-label">Average rating</span>
+        </div>
+      </section>
+
+      <CafeList cafes={cafes} loading={loading} onEdit={openEdit} onDelete={handleDelete} />
+
+      {showModal && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <CafeForm
+              key={editing ? editing._id : 'new'}
+              initialValues={editing}
+              onSubmit={handleSubmit}
+              onCancel={closeModal}
+              title={editing ? 'Edit Cafe' : 'Add New Cafe'}
+              submitLabel={editing ? 'Save changes' : 'Create Cafe'}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }
