@@ -13,6 +13,23 @@ const app = express();
 app.use(cors()); // allow React dev server to call this API
 app.use(express.json()); // parse JSON bodies
 
+// Ensure MongoDB is connected before any route runs.
+// Locally the connection opens once at startup; on Vercel (serverless)
+// the cached promise is reused across warm invocations.
+let dbPromise = null;
+function ensureDB() {
+  if (!dbPromise) dbPromise = connectDB();
+  return dbPromise;
+}
+app.use(async (req, res, next) => {
+  try {
+    await ensureDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'Cafe Experience Tracker API is running' });
@@ -31,12 +48,19 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB (Atlas URI from process.env.MONGODB_URI), then start server
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error('Failed to connect to MongoDB:', err.message);
-    process.exit(1);
-  });
+// Export the app for Vercel (serverless): Vercel requires the entrypoint
+// file instead of app.listen(). Locally (`node server.js`) it still
+// connects + listens exactly like before.
+module.exports = app;
+
+if (require.main === module && !process.env.VERCEL) {
+  // Connect to MongoDB (Atlas URI from process.env.MONGODB_URI), then start server
+  ensureDB()
+    .then(() => {
+      app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch((err) => {
+      console.error('Failed to connect to MongoDB:', err.message);
+      process.exit(1);
+    });
+}
