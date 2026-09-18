@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getCafes } from '../api';
 import { VIBES, isWorkFriendly } from '../site-helpers';
 import CafeCard from '../components/CafeCard';
@@ -7,6 +8,7 @@ import CafeDetailModal from '../components/CafeDetailModal';
 export default function ExplorePage() {
   const [cafes, setCafes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
 
   // Vibe finder + manual filters (independent systems)
@@ -20,9 +22,11 @@ export default function ExplorePage() {
   const [onlyWork, setOnlyWork] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setError('');
     getCafes()
       .then(setCafes)
-      .catch(() => {})
+      .catch((e) => setError(e.message || 'Failed to load cafes'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -128,6 +132,14 @@ export default function ExplorePage() {
 
         {loading ? (
           <div className="site-empty">Loading cafes…</div>
+        ) : error ? (
+          <div className="site-empty">
+            <p style={{ fontSize: 16, color: 'var(--s-gold-soft)', fontWeight: 700, margin: '0 0 8px' }}>
+              Couldn&apos;t reach the cafe database
+            </p>
+            <p style={{ margin: '0 0 18px' }}>{error}</p>
+            <Link to="/dashboard" className="site-btn site-btn-ghost site-btn-sm">Open Dashboard</Link>
+          </div>
         ) : results.length ? (
           <>
             <p className="site-count">{results.length} cafe{results.length > 1 ? 's' : ''} found</p>
@@ -135,6 +147,12 @@ export default function ExplorePage() {
               {results.map((c) => <CafeCard key={c._id} cafe={c} onOpen={setSelected} />)}
             </div>
           </>
+        ) : cafes.length === 0 ? (
+          <div className="site-empty">
+            <p style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>No cafes yet ☕</p>
+            <p style={{ margin: '0 0 18px' }}>Add your first cafe and it will show up here.</p>
+            <Link to="/add" className="site-btn site-btn-gold site-btn-sm">+ Add cafe</Link>
+          </div>
         ) : (
           <div className="site-empty">Nothing matches — try clearing a filter or two.</div>
         )}

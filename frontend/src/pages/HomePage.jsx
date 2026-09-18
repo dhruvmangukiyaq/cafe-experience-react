@@ -9,11 +9,20 @@ const MARQUEE = ['Work-friendly', 'Date Night', 'Slow Evenings', 'Great Espresso
 
 export default function HomePage() {
   const [cafes, setCafes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    getCafes().then(setCafes).catch(() => {});
-  }, []);
+  const load = () => {
+    setLoading(true);
+    setError('');
+    getCafes()
+      .then((data) => setCafes(data))
+      .catch((e) => setError(e.message || 'Failed to load cafes'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
 
   const topRated = useMemo(
     () => [...cafes].sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0)).slice(0, 3),
@@ -59,11 +68,43 @@ export default function HomePage() {
       </div>
 
       <section className="site-stats">
-        <div className="site-stat"><span className="site-stat-ico">☕</span><b>{cafes.length}</b><span>Cafes tracked</span></div>
-        <div className="site-stat"><span className="site-stat-ico">⭐</span><b>{avgRating(cafes)}</b><span>Average rating</span></div>
-        <div className="site-stat"><span className="site-stat-ico">🌍</span><b>{cities}</b><span>Cities covered</span></div>
-        <div className="site-stat"><span className="site-stat-ico">💻</span><b>{workPicks.length}</b><span>Work-friendly picks</span></div>
+        <div className="site-stat"><span className="site-stat-ico">☕</span><b>{loading ? '–' : cafes.length}</b><span>Cafes tracked</span></div>
+        <div className="site-stat"><span className="site-stat-ico">⭐</span><b>{loading ? '–' : avgRating(cafes)}</b><span>Average rating</span></div>
+        <div className="site-stat"><span className="site-stat-ico">🌍</span><b>{loading ? '–' : cities}</b><span>Cities covered</span></div>
+        <div className="site-stat"><span className="site-stat-ico">💻</span><b>{loading ? '–' : workPicks.length}</b><span>Work-friendly picks</span></div>
       </section>
+
+      {error && (
+        <section className="site-section" style={{ paddingTop: 30 }}>
+          <div className="site-empty">
+            <p style={{ fontSize: 17, color: 'var(--s-gold-soft)', fontWeight: 700, margin: '0 0 8px' }}>
+              Couldn&apos;t reach the cafe database
+            </p>
+            <p style={{ margin: '0 0 18px' }}>
+              {error}. The backend may be waking up or its database isn&apos;t connected yet.
+            </p>
+            <button type="button" className="site-btn site-btn-gold site-btn-sm" onClick={load}>Try again</button>
+          </div>
+        </section>
+      )}
+
+      {!error && !loading && cafes.length === 0 && (
+        <section className="site-section" style={{ paddingTop: 30 }}>
+          <div className="site-spot">
+            <div className="site-spot-cover" style={{ background: 'linear-gradient(135deg,#8a5a24,#2e1c08)' }}>
+              <span>☕</span>
+            </div>
+            <div className="site-spot-body">
+              <span className="site-spot-tag">Fresh start</span>
+              <h3>Your cafe journal starts here</h3>
+              <p className="site-spot-loc">Add your first cafe — rating, WiFi, price, notes, everything.</p>
+              <div className="site-hero-actions" style={{ justifyContent: 'flex-start', marginTop: 0 }}>
+                <Link to="/add" className="site-btn site-btn-gold site-btn-sm">+ Add your first cafe</Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {spotlight && (
         <section className="site-section">
