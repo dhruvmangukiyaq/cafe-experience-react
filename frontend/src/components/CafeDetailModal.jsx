@@ -1,14 +1,27 @@
 import { Link } from 'react-router-dom';
-import { coverFor, ratingStars, wifiStars, wifiSpeedLabel } from '../site-helpers';
+import { useEffect, useState } from 'react';
+import { coverFor, ratingStars, toArray, wifiStars, wifiSpeedLabel } from '../site-helpers';
+import { listFiles, fileViewUrl, fileDownloadUrl, prettySize, fileIcon } from '../api';
 
 // Read-only detail modal. Editing still happens only via the
 // existing CRUD routes (/dashboard, /edit/:id) — linked below.
 export default function CafeDetailModal({ cafe, onClose }) {
+  const [files, setFiles] = useState([]);
+
+  useEffect(() => {
+    if (!cafe) return;
+    let alive = true;
+    listFiles(cafe._id)
+      .then((data) => alive && setFiles(data))
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [cafe]);
+
   if (!cafe) return null;
   const env = cafe.environment || {};
   const rating = Number(cafe.rating ?? 0);
-  const tags = cafe.ambienceTags || [];
-  const specs = cafe.foodSpecialties || [];
+  const tags = toArray(cafe.ambienceTags);
+  const specs = toArray(cafe.foodSpecialties);
   const initial = (cafe.name || '?').trim().charAt(0).toUpperCase();
   return (
     <div className="site-overlay" onClick={onClose}>
@@ -34,6 +47,23 @@ export default function CafeDetailModal({ cafe, onClose }) {
           <div className="site-detail-row"><span>Power plugs</span><span>{cafe.powerPlugsAvailable ? 'Available' : 'Not available'}</span></div>
 
           {cafe.notes && <p className="site-notes">“{cafe.notes}”</p>}
+
+          {!!files.length && (
+            <>
+              <p className="site-kicker" style={{ marginTop: 16 }}>Files</p>
+              <ul className="file-list">
+                {files.map((f) => (
+                  <li key={f._id} className="file-row">
+                    <span className="file-ico">{fileIcon(f.mimetype)}</span>
+                    <span className="file-name">{f.originalName}</span>
+                    <span className="file-meta">{prettySize(f.size)}</span>
+                    <a className="file-link" href={fileViewUrl(f._id)} target="_blank" rel="noreferrer">View</a>
+                    <a className="file-link" href={fileDownloadUrl(f._id)}>Save</a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           <div className="site-modal-actions">
             <Link to={`/edit/${cafe._id}`} className="site-btn site-btn-gold site-btn-sm">Edit cafe</Link>

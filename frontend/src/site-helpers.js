@@ -2,6 +2,14 @@
 // The CRUD dashboard has its own local copies — this file is only
 // for the new site, so existing CRUD code stays untouched.
 
+// Anything that should be an array, made safe: a stray string or
+// null from the database can never crash a .map()/.join() again.
+export function toArray(v) {
+  if (Array.isArray(v)) return v;
+  if (v == null || v === '') return [];
+  return [v];
+}
+
 export function wifiStars(n) {
   const v = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
   return '★'.repeat(v) + '☆'.repeat(5 - v);
@@ -30,15 +38,12 @@ export function isWorkFriendly(cafe) {
   return (Number(cafe.wifiQuality) || 0) >= 4 && !!cafe.powerPlugsAvailable;
 }
 
-// Deterministic cover art per cafe (hash of name → gradient pair),
-// so every card gets its own rich visual without any image files.
+// Deterministic cover art per cafe — soft monochrome tints
+// (cream / sage / blush) so cards stay calm and minimal.
 const COVERS = [
-  ['#8a5a24', '#2e1c08'],
-  ['#5e3a5e', '#221430'],
-  ['#1f5e4d', '#0b2921'],
-  ['#8a2f35', '#381114'],
-  ['#2f5e8a', '#0f2233'],
-  ['#6b5424', '#26200e'],
+  ['#f3e9d2', '#e9dabc'],
+  ['#e3ebe1', '#d2ded0'],
+  ['#f5e2d5', '#ecd0bd'],
 ];
 
 export function coverFor(name) {

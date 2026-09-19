@@ -1,5 +1,6 @@
 // Table view matching the screenshot: NAME / CITY-AREA / SPECIALTIES /
 // ENVIRONMENT / PRICE / WIFI / RATING / TAGS / ACTIONS.
+import { toArray } from '../site-helpers';
 function wifiStars(n) {
   const v = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
   return '★'.repeat(v) + '☆'.repeat(5 - v);
@@ -43,8 +44,8 @@ export default function CafeList({ cafes, loading, onEdit, onDelete }) {
         </thead>
         <tbody>
           {cafes.map((cafe, i) => {
-            const specs = cafe.foodSpecialties || [];
-            const tags = cafe.ambienceTags || [];
+            const specs = toArray(cafe.foodSpecialties);
+            const tags = toArray(cafe.ambienceTags);
             const rating = Number(cafe.rating ?? 0);
             return (
               <tr key={cafe._id} className={i % 2 === 1 ? '' : i === 2 ? 'alt' : ''}>

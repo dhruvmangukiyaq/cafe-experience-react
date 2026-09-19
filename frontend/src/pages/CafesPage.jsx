@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getCafes, deleteCafe, createCafe, updateCafe } from '../api';
 import CafeList from '../components/CafeList';
 import CafeForm from '../components/CafeForm';
+import BackButton from '../components/BackButton';
 
 export default function CafesPage() {
   const [cafes, setCafes] = useState([]);
@@ -74,6 +75,9 @@ export default function CafesPage() {
 
   return (
     <>
+      <div className="back-btn-row">
+        <BackButton to="/" />
+      </div>
       {banner && <p className="banner">{banner}</p>}
 
       <header className="hero">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getCafe, updateCafe } from '../api';
 import CafeForm from '../components/CafeForm';
+import BackButton from '../components/BackButton';
 
 export default function EditCafePage() {
   const { id } = useParams();
@@ -42,9 +43,9 @@ export default function EditCafePage() {
   return (
     <>
       {banner && <p className="banner">{banner}</p>}
-      <Link to="/" className="back-link">
-        ← Back to list
-      </Link>
+      <div className="back-btn-row">
+        <BackButton to="/" />
+      </div>
       <div className="page-center">
         <div className="modal" style={{ boxShadow: '0 2px 10px rgba(0,0,0,.08)' }}>
           <CafeForm

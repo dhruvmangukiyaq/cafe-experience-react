@@ -1,9 +1,9 @@
-import { coverFor, ratingStars, wifiStars, wifiSpeedLabel } from '../site-helpers';
+import { coverFor, ratingStars, toArray, wifiStars, wifiSpeedLabel } from '../site-helpers';
 
 // Dark premium cafe card: visual cover header + info body.
 // (CRUD table untouched — this card is only for Home / Explore.)
 export default function CafeCard({ cafe, onOpen, reason }) {
-  const specs = cafe.foodSpecialties || [];
+  const specs = toArray(cafe.foodSpecialties);
   const rating = Number(cafe.rating ?? 0);
   const initial = (cafe.name || '?').trim().charAt(0).toUpperCase();
   return (

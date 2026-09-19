@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { toArray } from '../site-helpers';
+import Attachments from './Attachments';
 
 const EMPTY_FORM = {
   name: '',
@@ -24,7 +26,7 @@ function fromInitialValues(cafe) {
     name: cafe.name || '',
     city: cafe.city || '',
     area: cafe.area || '',
-    foodSpecialties: (cafe.foodSpecialties || []).join(', '),
+    foodSpecialties: toArray(cafe.foodSpecialties).join(', '),
     noiseLevel: cafe.environment?.noiseLevel || 'normal',
     seatingType: cafe.environment?.seatingType || 'mixed',
     wifiSpeed: cafe.environment?.wifiSpeed || 'medium',
@@ -33,7 +35,7 @@ function fromInitialValues(cafe) {
     avgPricePerPerson: cafe.avgPricePerPerson ?? '',
     wifiQuality: cafe.wifiQuality ?? '3',
     powerPlugsAvailable: cafe.powerPlugsAvailable ?? false,
-    ambienceTags: (cafe.ambienceTags || []).join(', '),
+    ambienceTags: toArray(cafe.ambienceTags).join(', '),
     rating: cafe.rating ?? '',
     notes: cafe.notes || '',
   };
@@ -51,6 +53,7 @@ for (let v = 0; v <= 5; v += 0.5) RATING_OPTIONS.push(v);
 
 export default function CafeForm({ initialValues, onSubmit, onCancel, title, submitLabel }) {
   const [form, setForm] = useState(() => fromInitialValues(initialValues));
+  const [pending, setPending] = useState([]); // files waiting (Add mode only)
   const [error, setError] = useState('');
   const isEdit = !!initialValues;
 
@@ -87,7 +90,7 @@ export default function CafeForm({ initialValues, onSubmit, onCancel, title, sub
       rating: form.rating === '' ? 0 : Number(form.rating),
       notes: form.notes.trim(),
     };
-    onSubmit(payload);
+    onSubmit(payload, pending);
   };
 
   return (
@@ -215,6 +218,14 @@ export default function CafeForm({ initialValues, onSubmit, onCancel, title, sub
           Notes
           <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} />
         </label>
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <Attachments
+          cafeId={initialValues?._id || null}
+          pending={pending}
+          onPendingChange={setPending}
+        />
       </div>
 
       <div className="modal-actions">

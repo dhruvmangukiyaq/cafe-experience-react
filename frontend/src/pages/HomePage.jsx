@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getCafes } from '../api';
-import { avgRating, coverFor, isWorkFriendly, ratingStars, wifiSpeedLabel } from '../site-helpers';
+import { avgRating, coverFor, isWorkFriendly, ratingStars, toArray, wifiSpeedLabel } from '../site-helpers';
 import CafeCard from '../components/CafeCard';
 import CafeDetailModal from '../components/CafeDetailModal';
 
@@ -35,25 +35,21 @@ export default function HomePage() {
   return (
     <>
       <header className="site-hero">
-        <div className="site-hero-art">
-          <span className="orb o1" />
-          <span className="orb o2" />
-          <span className="orb o3" />
-          <span className="cup-glow">☕</span>
-          <span className="bean b1" />
-          <span className="bean b2" />
-          <span className="bean b3" />
-          <span className="bean b4" />
-        </div>
+        <div className="site-hero-inner">
         <span className="site-eyebrow reveal">Work • Chill • Repeat</span>
         <h1 className="reveal d1">Find your perfect <em>cafe escape</em></h1>
         <p className="reveal d2">
           Every cafe you&apos;ve visited, rated and loved — curated into one dark,
           premium guide for work sessions, slow evenings and date nights.
         </p>
+        <div className="site-proof reveal d2">
+          <span className="avatar-stack"><i>H</i><i>C</i><i>M</i><i>+</i></span>
+          <span className="site-proof-txt"><b>★★★★★</b> Loved by cafe hoppers{cafes.length > 0 ? ` across ${cities} ${cities === 1 ? 'city' : 'cities'}` : ''}</span>
+        </div>
         <div className="site-hero-actions reveal d3">
           <Link to="/explore" className="site-btn site-btn-gold">Explore cafes</Link>
           <Link to="/dashboard" className="site-btn site-btn-ghost">Open Dashboard</Link>
+        </div>
         </div>
       </header>
 
@@ -91,7 +87,7 @@ export default function HomePage() {
       {!error && !loading && cafes.length === 0 && (
         <section className="site-section" style={{ paddingTop: 30 }}>
           <div className="site-spot">
-            <div className="site-spot-cover" style={{ background: 'linear-gradient(135deg,#8a5a24,#2e1c08)' }}>
+            <div className="site-spot-cover" style={{ background: 'linear-gradient(135deg,#c97a1e,#3a1e06)' }}>
               <span>☕</span>
             </div>
             <div className="site-spot-body">
@@ -119,8 +115,8 @@ export default function HomePage() {
               <h3>{spotlight.name}</h3>
               <p className="site-spot-loc">{spotlight.city}{spotlight.area ? ` • ${spotlight.area}` : ''}</p>
               <div className="site-pills">
-                {(spotlight.foodSpecialties || []).map((s) => <span key={s} className="site-pill">{s}</span>)}
-                {(spotlight.ambienceTags || []).map((t) => <span key={t} className="site-pill green">{t}</span>)}
+                {toArray(spotlight.foodSpecialties).map((s) => <span key={s} className="site-pill">{s}</span>)}
+                {toArray(spotlight.ambienceTags).map((t) => <span key={t} className="site-pill green">{t}</span>)}
               </div>
               <div className="site-spot-meta">
                 <span className="site-price">{spotlight.avgPricePerPerson != null ? `₹${spotlight.avgPricePerPerson}` : '—'}</span>

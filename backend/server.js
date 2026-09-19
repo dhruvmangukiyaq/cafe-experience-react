@@ -5,6 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const cafeRoutes = require('./routes/cafeRoutes');
+const authRoutes = require('./routes/authRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -37,6 +39,12 @@ app.get('/', (req, res) => {
 
 // All cafe CRUD routes live under /api/cafes
 app.use('/api/cafes', cafeRoutes);
+
+// Auth routes (public: register/login, protected: me)
+app.use('/api/auth', authRoutes);
+
+// File uploads live in MongoDB Atlas (public: list/view, login: upload/delete)
+app.use('/api/uploads', uploadRoutes);
 
 // 404 for unknown API routes
 app.use((req, res) => {

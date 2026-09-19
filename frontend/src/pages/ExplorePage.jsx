@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getCafes } from '../api';
-import { VIBES, isWorkFriendly } from '../site-helpers';
+import { VIBES } from '../site-helpers';
 import CafeCard from '../components/CafeCard';
 import CafeDetailModal from '../components/CafeDetailModal';
+import BackButton from '../components/BackButton';
 
 export default function ExplorePage() {
   const [cafes, setCafes] = useState([]);
@@ -11,15 +12,8 @@ export default function ExplorePage() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
 
-  // Vibe finder + manual filters (independent systems)
+  // Vibe finder + full list (top rated first)
   const [vibe, setVibe] = useState(null);
-  const [query, setQuery] = useState('');
-  const [city, setCity] = useState('');
-  const [minRating, setMinRating] = useState('');
-  const [sort, setSort] = useState('rating-desc');
-  const [onlyAC, setOnlyAC] = useState(false);
-  const [onlyPlugs, setOnlyPlugs] = useState(false);
-  const [onlyWork, setOnlyWork] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -30,41 +24,21 @@ export default function ExplorePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const cities = useMemo(
-    () => [...new Set(cafes.map((c) => c.city).filter(Boolean))].sort(),
-    [cafes]
-  );
-
   const vibePicks = useMemo(() => {
     if (!vibe) return null;
     return cafes.filter(VIBES[vibe].match).slice(0, 3);
   }, [vibe, cafes]);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let list = cafes.filter((c) => {
-      if (q && !`${c.name} ${c.city} ${c.area || ''}`.toLowerCase().includes(q)) return false;
-      if (city && c.city !== city) return false;
-      if (minRating !== '' && (Number(c.rating) || 0) < Number(minRating)) return false;
-      if (onlyAC && !c.environment?.hasAC) return false;
-      if (onlyPlugs && !c.powerPlugsAvailable) return false;
-      if (onlyWork && !isWorkFriendly(c)) return false;
-      return true;
-    });
-    list = [...list].sort((a, b) => {
-      switch (sort) {
-        case 'rating-asc': return (Number(a.rating) || 0) - (Number(b.rating) || 0);
-        case 'price-asc': return (a.avgPricePerPerson ?? 1e9) - (b.avgPricePerPerson ?? 1e9);
-        case 'price-desc': return (b.avgPricePerPerson ?? -1) - (a.avgPricePerPerson ?? -1);
-        case 'name': return (a.name || '').localeCompare(b.name || '');
-        default: return (Number(b.rating) || 0) - (Number(a.rating) || 0);
-      }
-    });
-    return list;
-  }, [cafes, query, city, minRating, sort, onlyAC, onlyPlugs, onlyWork]);
+  const results = useMemo(
+    () => [...cafes].sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0)),
+    [cafes]
+  );
 
   return (
     <>
+      <div className="site-back-row">
+        <BackButton to="/" />
+      </div>
       <section className="site-section" style={{ paddingTop: 40 }}>
         <p className="site-kicker">Find my vibe</p>
         <div className="site-section-head"><h2>Tell me your mood</h2></div>
@@ -94,42 +68,6 @@ export default function ExplorePage() {
       </section>
 
       <section className="site-section" style={{ paddingTop: 30 }}>
-        <p className="site-kicker">Browse all</p>
-        <div className="site-section-head"><h2>Explore cafes</h2></div>
-
-        <div className="site-toolbar">
-          <label>Search<input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, city, area…" /></label>
-          <label>City
-            <select value={city} onChange={(e) => setCity(e.target.value)}>
-              <option value="">All cities</option>
-              {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </label>
-          <label>Min rating
-            <select value={minRating} onChange={(e) => setMinRating(e.target.value)}>
-              <option value="">Any</option>
-              <option value="4">4.0+</option>
-              <option value="3">3.0+</option>
-              <option value="2">2.0+</option>
-            </select>
-          </label>
-          <label>Sort by
-            <select value={sort} onChange={(e) => setSort(e.target.value)}>
-              <option value="rating-desc">Rating: high → low</option>
-              <option value="rating-asc">Rating: low → high</option>
-              <option value="price-asc">Price: low → high</option>
-              <option value="price-desc">Price: high → low</option>
-              <option value="name">Name A–Z</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="site-checks">
-          <label className="site-check"><input type="checkbox" checked={onlyAC} onChange={(e) => setOnlyAC(e.target.checked)} /> AC</label>
-          <label className="site-check"><input type="checkbox" checked={onlyPlugs} onChange={(e) => setOnlyPlugs(e.target.checked)} /> Power plugs</label>
-          <label className="site-check"><input type="checkbox" checked={onlyWork} onChange={(e) => setOnlyWork(e.target.checked)} /> Work-friendly only</label>
-        </div>
-
         {loading ? (
           <div className="site-empty">Loading cafes…</div>
         ) : error ? (
@@ -147,14 +85,12 @@ export default function ExplorePage() {
               {results.map((c) => <CafeCard key={c._id} cafe={c} onOpen={setSelected} />)}
             </div>
           </>
-        ) : cafes.length === 0 ? (
+        ) : (
           <div className="site-empty">
             <p style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>No cafes yet ☕</p>
             <p style={{ margin: '0 0 18px' }}>Add your first cafe and it will show up here.</p>
             <Link to="/add" className="site-btn site-btn-gold site-btn-sm">+ Add cafe</Link>
           </div>
-        ) : (
-          <div className="site-empty">Nothing matches — try clearing a filter or two.</div>
         )}
       </section>
 
