@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /add
+Disallow: /edit/
+
+Sitemap: https://cafe-experience-react.vercel.app/sitemap.xml
