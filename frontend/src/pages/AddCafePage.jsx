@@ -15,8 +15,6 @@ export default function AddCafePage() {
         try {
           await uploadFiles(cafe._id, pendingFiles);
         } catch {
-          // Cafe is saved; jump to its Edit page where files upload live,
-          // so retrying never creates a duplicate cafe.
           navigate(`/edit/${cafe._id}`);
           return;
         }

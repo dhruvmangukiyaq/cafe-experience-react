@@ -11,13 +11,8 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-// Middleware
-app.use(cors()); // allow React dev server to call this API
-app.use(express.json()); // parse JSON bodies
-
-// Ensure MongoDB is connected before any route runs.
-// Locally the connection opens once at startup; on Vercel (serverless)
-// the cached promise is reused across warm invocations.
+app.use(cors());
+app.use(express.json());
 let dbPromise = null;
 function ensureDB() {
   if (!dbPromise) dbPromise = connectDB();
@@ -32,33 +27,20 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Health check
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'Cafe Experience Tracker API is running' });
 });
-
-// All cafe CRUD routes live under /api/cafes
 app.use('/api/cafes', cafeRoutes);
-
-// Auth routes (public: register/login, protected: me)
 app.use('/api/auth', authRoutes);
-
-// File uploads live in MongoDB Atlas (public: list/view, login: upload/delete)
 app.use('/api/uploads', uploadRoutes);
-
-// 404 for unknown API routes
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// Central error handler (must be last)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-// Export the app for Vercel (serverless): Vercel requires the entrypoint
-// file instead of app.listen(). Locally (`node server.js`) it still
-// connects + listens exactly like before.
 module.exports = app;
 
 if (require.main === module && !process.env.VERCEL) {

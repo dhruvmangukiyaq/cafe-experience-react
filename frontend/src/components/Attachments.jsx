@@ -1,6 +1,29 @@
 import { useEffect, useState } from 'react';
 import { uploadFiles, listFiles, deleteFile, fileViewUrl, prettySize, fileIcon } from '../api';
 
+// Client-side caps mirror the backend: documents 5MB, photos 10MB.
+// Oversize files are rejected instantly, without a server roundtrip.
+const DOC_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv',
+  'text/plain',
+]);
+const DOC_LIMIT = 5 * 1024 * 1024;
+const PHOTO_LIMIT = 10 * 1024 * 1024;
+
+function sizeError(file) {
+  const limit = DOC_TYPES.has(file.type) ? DOC_LIMIT : PHOTO_LIMIT;
+  if (file.size > limit) {
+    const cap = limit === DOC_LIMIT ? '5MB' : '10MB';
+    return `${file.name} is over the ${cap} limit (${prettySize(file.size)})`;
+  }
+  return null;
+}
+
 // File section for the cafe form.
 // - Edit mode (cafeId set): uploads go straight to the server.
 // - Add mode (cafeId null): files wait in `pending` and the parent
@@ -29,6 +52,12 @@ export default function Attachments({ cafeId, pending, onPendingChange }) {
     e.target.value = ''; // allow picking the same file again
     if (!picked.length) return;
     setMsg('');
+
+    const bad = picked.map(sizeError).find(Boolean);
+    if (bad) {
+      setMsg(bad);
+      return;
+    }
 
     if (!cafeId) {
       onPendingChange([...pending, ...picked]);
@@ -105,7 +134,7 @@ export default function Attachments({ cafeId, pending, onPendingChange }) {
           onChange={handleSelect}
         />
       </label>
-      <p className="attach-hint">Photo, PDF, Word, Excel — max 10MB per file.</p>
+      <p className="attach-hint">Photo max 10MB • PDF / Word / Excel max 5MB.</p>
       {msg && <p className="error">{msg}</p>}
     </div>
   );

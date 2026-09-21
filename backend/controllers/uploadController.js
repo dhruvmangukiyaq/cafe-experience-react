@@ -24,6 +24,19 @@ const ALLOWED = new Set([
   'text/plain',
 ]);
 
+// Per-type size caps: documents max 5MB, photos max 10MB
+// (multer's hard cap below stays 10MB for everything).
+const DOC_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv',
+  'text/plain',
+]);
+const DOC_LIMIT = 5 * 1024 * 1024;
+
 // Memory storage: file never touches disk (Vercel-safe), goes straight to Atlas
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -44,6 +57,13 @@ exports.uploadFiles = asyncHandler(async (req, res) => {
   const cafe = await Cafe.findOne({ _id: cafeId, isDeleted: false });
   if (!cafe) throw httpError(404, 'Cafe not found');
   if (!req.files || !req.files.length) throw httpError(400, 'No files received');
+
+  // Documents (pdf/doc/excel/…) cap at 5MB; photos cap at multer's 10MB
+  const tooBig = req.files.filter((f) => DOC_TYPES.has(f.mimetype) && f.size > DOC_LIMIT);
+  if (tooBig.length) {
+    const names = tooBig.map((f) => f.originalname).join(', ');
+    throw httpError(400, `PDF / Word / Excel files must be under 5MB: ${names}`);
+  }
 
   const docs = await Attachment.insertMany(
     req.files.map((f) => ({
